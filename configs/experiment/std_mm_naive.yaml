@@ -1,0 +1,19 @@
+# @package _global_
+# ②-naive: 劣化 baseline（射影なし＋未事前学習の connector）。
+# 過去のBabyLMマルチモーダル提出が劣化した条件の再現。std_mm との差は connector.type のみ
+# （ADR-0006: naive = connector.type=identity 一本。fusion=naive のような二重定義は作らない）。
+# identity は vision_feature_dim==d_model 前提（ViT-B/14=768=d_model なので成立）。
+defaults:
+  - override /model: standard
+  - override /data: multimodal
+
+name: std_mm_naive
+
+model:
+  fusion: connector       # 視覚 on（ゲート）
+  vision_encoder:
+    enabled: true
+    n_visual_tokens: 1    # 公式特徴は V=1（OSF 確認）。identity は 768==d_model で成立
+  connector:
+    type: identity        # 射影なし＝劣化条件（naive）
+    inject_iters: 0

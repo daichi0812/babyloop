@@ -1,0 +1,7 @@
+# @package _global_
+# ③ ループドTransformer × テキストのみ（アーキテクチャの主効果の分離用）
+defaults:
+  - override /model: looped
+  - override /data: text_only
+
+name: loop_text

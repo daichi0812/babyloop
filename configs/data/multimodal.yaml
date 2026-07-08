@@ -1,0 +1,33 @@
+# テキスト＋視覚（BabyLM 2026: Strict 内に画像-caption 併用が許可。MM は独立トラック廃止）
+# キャプションの語数も word_budget に計上する（WordBudgetTracker が検証）
+name: multimodal
+modality: multimodal
+word_budget: 100000000  # 100M words（テキスト＋キャプション語数の合計）
+text_caption_ratio: 0.5  # 予算のうち text の割合（残りが caption）。batch 混合確率も兼ねる（ablation対象）
+
+# --- 入力（download_mm_data.py が用意。配布元 = OSF プロジェクト ad7qg の multimodal_data/）---
+# ②の主経路は「公式同梱の DINOv2 ViT-Base(768) 特徴」を使う（feature_source: official）。
+# OSF 配布: local_narr_captions.json / local_narr_dino_v2_states.npy (N,768),
+#           cc_3M_captions.json / cc_3M_dino_v2_states_{1,2}of2.npy。caption と .npy は行 index で対応。
+# 画像は再配布されない → official モードでは画像 DL 不要（事前計算済み特徴をそのまま使う）。
+# 自前抽出（系統2: ablation/④, 64パッチ grid）は feature_source: images（VisionFeatureExtractor）。
+osf_project: ad7qg               # OSF プロジェクト ID（multimodal_data/ に caption と DINOv2 特徴）
+text_dir: data/text              # ①と同じテキストコーパス（予算 text_caption_ratio 分だけ使う）
+caption_dir: data/mm/captions    # captions.jsonl（{"image_id","caption"} / 1行1対。image_id=源_行index）
+image_dir: data/mm/images        # 配布 raw 画像（feature_source: images の自前抽出時のみ使用）
+tokenizer_path: data/tokenizer   # ①の凍結 tokenizer を再利用（BLiMP比較性。無ければ疎通で学習）
+backfill_ln: false               # CC3M 不足時に LN で補填するか（既定 false=得られた語数で締める）
+
+# --- 視覚特徴（precompute_vision.py が我々の memmap 形式へ取り込む。ADR-0005）---
+feature_source: official         # official(OSFの事前計算済DINOv2特徴を取り込む) / images(配布画像から自前抽出)
+feature_dir: data/mm/vision      # feats.npy (M, V, feature_dim) fp16 ＋ index.json
+dinov2_name: facebook/dinov2-base  # 自前抽出(images)時の encoder（ViT-Base, hidden=768=d_model）
+# 保存トークン数 V。公式特徴は **V=1（単一 global/CLS ベクトル, 768次元 fp32）**＝OSF 実ファイルサイズで確認済。
+# images 自前抽出時は 64(8×8 grid) など平方数（ablation）。
+stored_tokens: 1
+
+# --- 前処理出力 ---
+processed_dir: data/mm/processed # text/（packed blocks）と captions/（画像-caption 単位レコード）
+
+# --- ablation ---
+ablate_zero_vision: false        # true で視覚特徴をゼロ化（features-off 対照。std_mm_featoff が override）

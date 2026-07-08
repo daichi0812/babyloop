@@ -1,0 +1,6 @@
+# テキストのみ（BabyLM strict track 相当）
+name: text_only
+modality: text
+word_budget: 100000000  # 100M words
+text_dir: data/text
+tokenizer_path: data/tokenizer

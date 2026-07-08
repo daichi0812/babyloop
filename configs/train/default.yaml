@@ -1,0 +1,32 @@
+seed: 42
+
+# --- 最適化（AdamW, LM標準）---
+lr: 6e-4               # peak lr（GPT-3 125M準拠、要スイープ）
+adam_beta1: 0.9
+adam_beta2: 0.95
+weight_decay: 0.1
+grad_clip: 1.0
+
+# --- スケジュール（words_seen 駆動。地平線=max_words_seen＝全セル共通）---
+lr_schedule: cosine    # linear warmup → cosine（→ peak×min_lr_ratio）
+min_lr_ratio: 0.1
+warmup_frac: 0.015     # warmup = max_words_seen の割合（語数比）。① の warmup≈1.5% を踏襲＝①③再現
+warmup_steps: 1000     # 【非推奨/未使用】LR は warmup_frac(語数) 駆動に移行。互換のため残置（override 可だが無効）
+
+# --- バッチ・精度 ---
+batch_size: 64         # micro-batch。effective batch = batch_size × grad_accum_steps × max_seq_len
+grad_accum_steps: 1    # 本番は effective batch 0.25〜0.5M tokens 狙いで 8〜16（64×512×8≒26万）。step は optimizer-step を数える
+precision: bf16        # A100前提（autocast は cuda 時のみ。mps/cpu は fp32）
+max_steps: 100000      # 【安全キャップ】LR 地平線でも停止主因でもない。停止は words_seen>=max_words_seen が主。
+                       #   words_seen が届くより十分大きく取る（可変長 MM は語/step が小さいので余裕を持って）。
+max_words_seen: 1000000000  # 2026ルール: データ露出 ≤1B語（=10エポック）。**これが LR 地平線＆主停止条件**。word_budget(=ユニーク100M)とは別概念
+
+log_every: 100
+save_state_every: 1000  # resume 用の学習状態(optimizer/scheduler/step/words/RNG)を rolling 保存する optimizer-step 間隔
+
+# 提出規定の28点（累積入力語数 total, not unique）。step数ではなく累積語数で駆動。
+# 1M刻み〜9M / 10M刻み〜90M / 100M刻み〜1000M。collate_preds.py の chck_*M（OTHER_FAST_REVISIONS）と一致。
+checkpoint_milestones:
+  [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000,
+   10000000, 20000000, 30000000, 40000000, 50000000, 60000000, 70000000, 80000000, 90000000,
+   100000000, 200000000, 300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]

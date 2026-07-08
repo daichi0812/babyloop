@@ -1,0 +1,21 @@
+# @package _global_
+# features-off 対照: ② std_mm と完全同一（データ組成・prefix機構・budget分割・connector）だが
+# 視覚特徴をゼロ化。②−featoff ＝「視覚情報そのもの」の寄与、featoff−① ＝「prefix機構＋
+# budget分割＋caption register」の寄与に分離（④−③交絡の切り出し。paper Limitations 参照）。
+defaults:
+  - override /model: standard
+  - override /data: multimodal
+
+name: std_mm_featoff
+
+data:
+  ablate_zero_vision: true  # ← ② との唯一の差
+
+model:
+  fusion: connector
+  vision_encoder:
+    enabled: true
+    n_visual_tokens: 1
+  connector:
+    type: mlp
+    inject_iters: 0

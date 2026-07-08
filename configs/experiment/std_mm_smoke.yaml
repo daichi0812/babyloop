@@ -1,0 +1,36 @@
+# @package _global_
+# ② 疎通用（デバッグ専用・2×2セルではない）: docs/design.md §3「疎通ラン」。
+# 半分以下サイズ・少ステップ＋少数画像で download→precompute→preprocess→学習→保存 を Mac 上で
+# 一気通貫させる。本番100M構成は experiment=std_mm。視覚特徴は ~数千枚で precompute する。
+defaults:
+  - override /model: standard
+  - override /data: multimodal
+
+name: std_mm_smoke
+
+model:
+  d_model: 256
+  n_heads: 4          # head_dim = 64（設計確定値）
+  n_layers: 4         # = n_prelude + n_core + n_coda
+  n_core: 4
+  vocab_size: 8000    # 小データ・疎通用に縮小
+  max_seq_len: 128
+  fusion: connector
+  vision_encoder:
+    enabled: true
+    n_visual_tokens: 1    # 公式特徴は V=1（OSF 確認）。疎通も V=1 で実経路に揃える
+  connector:
+    type: mlp             # 768(feature_dim)→256(d_model)。identity は d_model!=768 で不可
+    inject_iters: 0
+
+data:
+  word_budget: 2000000    # 疎通用に縮小（text 1M + caption 1M）
+
+train:
+  batch_size: 8
+  grad_accum_steps: 2
+  warmup_steps: 5
+  max_steps: 40
+  log_every: 5
+  save_state_every: 10
+  checkpoint_milestones: [10000, 20000]

@@ -1,0 +1,20 @@
+# @package _global_
+# ② 標準Transformer × マルチモーダル（視覚追加で言語能力が劣化するかの検証セル）
+# 軸の張り方は ADR-0006: fusion=視覚 on/off ゲート / connector.type=projector 型 /
+# connector.inject_iters=注入場所（②は 0=prefix連結）。
+defaults:
+  - override /model: standard
+  - override /data: multimodal
+
+name: std_mm
+
+model:
+  fusion: connector       # 視覚 on（ゲート）。projector 型は connector.type で指定
+  vision_encoder:
+    enabled: true
+    # prefix する視覚トークン数。公式特徴は V=1（単一 global/CLS ベクトル）で確定（OSF 実ファイル確認, ADR-0005）。
+    # 64パッチ grid の richer signal は images 自前抽出の ablation（feature_source: images）。
+    n_visual_tokens: 1
+  connector:
+    type: mlp             # 本命: 2層 MLP で 768d へ射影（劣化 baseline は std_mm_naive=identity）
+    inject_iters: 0       # ②: prefix連結（inputs_embeds 先頭へ）

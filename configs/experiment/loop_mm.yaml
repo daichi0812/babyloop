@@ -1,0 +1,22 @@
+# @package _global_
+# ④ ループドTransformer × マルチモーダル（本命: ループ化がMM劣化を緩和するか）
+# 軸は ADR-0006: fusion=視覚 on/off ゲート / connector.type=projector 型 /
+# connector.inject_iters=注入場所（④は >0=ループ初期へ staged 注入）。
+# inject() は実装済（modeling_babyloop: prefix_refresh 既定＝先頭V位置へ視覚再加算 / broadcast）。
+# ④は prefix_refresh × inject_iters=2（K=4 の先頭2イテレーションで視覚をリフレッシュ）。
+# clean baseline は loop_mm_prefix（inject_iters=0＝視覚 prefix once×K>1）で、ループ単体効果と
+# staged 再注入の上乗せを分離する（ADR-0006 / 交互作用の apples-to-apples 化）。
+defaults:
+  - override /model: looped
+  - override /data: multimodal
+
+name: loop_mm
+
+model:
+  fusion: connector       # 視覚 on（ゲート）
+  vision_encoder:
+    enabled: true
+    n_visual_tokens: 1      # 公式特徴は V=1（OSF 確認）。prefix=1トークンで系列コストほぼゼロ
+  connector:
+    type: mlp             # projector 型（劣化条件は identity）
+    inject_iters: 2       # ④: ループ初期の数イテレーションへ階層注入（HIVE流、要検証）

@@ -1,0 +1,26 @@
+# @package _global_
+# ① 疎通用（デバッグ専用・2×2セルではない）: docs/design.md §3「疎通ラン」。
+# 半分以下サイズ・少ステップで data→学習→保存→評価 を Mac 上で一気通貫させる。
+# 本番100M構成は experiment=std_text。
+defaults:
+  - override /model: standard
+  - override /data: text_only
+
+name: std_text_smoke
+
+model:
+  d_model: 256
+  n_heads: 4          # head_dim = 64（設計確定値）
+  n_layers: 4         # = n_prelude + n_core + n_coda
+  n_core: 4
+  vocab_size: 8000    # 小データ・疎通用に縮小
+  max_seq_len: 128
+
+train:
+  batch_size: 8
+  grad_accum_steps: 2     # 疎通で grad accum 経路も通す（effective batch = 8×2×128）
+  warmup_steps: 5
+  max_steps: 40
+  log_every: 5
+  save_state_every: 10    # 疎通で resume 用 state 保存経路も通す
+  checkpoint_milestones: [10000, 20000]

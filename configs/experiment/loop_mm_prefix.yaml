@@ -1,0 +1,19 @@
+# @package _global_
+# ④ clean baseline: ループ×視覚 prefix・**視覚の再注入なし**（inject_iters=0）。
+# ②と同じ視覚の入れ方（prefix で一度入る）のまま K>1。inject_input(③のループ機構)は**テキストのみ**
+# 再加算するので、視覚は prefix で一度だけ＝真の「視覚once」。loop_mm(B, inject_iters>0) との差が
+# 「inject() の視覚 staged 再注入の追加効果」、loop_text(③) との差が「視覚 prefix の効果」に綺麗に分離（ADR-0006）。
+defaults:
+  - override /model: looped
+  - override /data: multimodal
+
+name: loop_mm_prefix
+
+model:
+  fusion: connector       # 視覚 on（ゲート）
+  vision_encoder:
+    enabled: true
+    n_visual_tokens: 1      # 公式特徴は V=1（OSF 確認）
+  connector:
+    type: mlp
+    inject_iters: 0       # 再注入なし＝prefix のみ（②と同じ入れ方で K>1）

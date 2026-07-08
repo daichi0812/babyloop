@@ -1,0 +1,7 @@
+# ループドTransformer。standardとの差分は k と inject_input のみ（K=1で標準に縮退する単一実装）
+defaults:
+  - standard
+
+name: looped
+k: 4                # ③ベースライン（4 or 8、要スイープ）
+inject_input: true # 単純加算 inject h += embed(x)（③本格化で詰める）

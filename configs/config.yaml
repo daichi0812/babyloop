@@ -1,0 +1,17 @@
+# primary config: scripts/*.py の @hydra.main から読まれる
+# 実験は experiment=<name> で切り替える（例: train.py experiment=loop_mm）
+defaults:
+  - _self_
+  - model: standard
+  - data: text_only
+  - train: default
+  - experiment: null
+
+name: default
+
+hydra:
+  run:
+    dir: outputs/${name}/seed_${train.seed}
+  sweep:
+    dir: multirun/${name}
+    subdir: seed_${train.seed}

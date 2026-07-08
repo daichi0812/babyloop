@@ -1,0 +1,39 @@
+# 標準Transformer（K=1: ループなし）= 2×2のアーキテクチャ要因のベースライン
+# 値の正はここ（configs/）。設計の全体像は docs/design.md、なぜは docs/decisions/
+name: standard
+
+# --- ループ ---
+k: 1                  # = Notion K（小文字維持: test と experiment config が参照）。K=1 で標準に縮退
+n_prelude: 0          # ループ外・前処理層（①は0）
+n_core: 12            # ループさせる中核ブロック（K回）
+n_coda: 0             # ループ外・後処理層（①は0）
+inject_input: false   # ループ間で h += embed(x) するか（③で本格化）
+
+# --- アーキテクチャ（Llama系レシピ）---
+d_model: 768
+n_layers: 12          # = n_prelude + n_core + n_coda
+n_heads: 12           # head_dim = 64
+ffn_hidden: 2048      # SwiGLU（d_model×2.67≒2048）
+vocab_size: 16000     # BabyLM2026コーパスで学習した BPE
+max_seq_len: 512
+rope_base: 10000      # RoPE（ループ再利用に好相性）
+rms_eps: 1e-5         # RMSNorm + Pre-Norm
+tie_embeddings: true  # embedding と lm_head を tie
+bias: false           # Linear の bias を全廃
+dropout: 0
+
+# --- 視覚（②④。text では無効）---
+# 軸の張り方は ADR-0006: fusion=視覚 on/off ゲート / connector.type=projector 型 /
+# connector.inject_iters=注入場所（0=prefix=② / >0=staged=④）。
+fusion: null          # 視覚 on/off ゲート（null=テキスト / not-null=視覚あり）。projector 型は持たない
+vision_encoder:
+  enabled: false      # ← test が参照
+  name: facebook/dinov2-base  # frozen 画像のみSSL（ViT-B/14, hidden=768=d_model。ADR-0002/0005）
+  mode: frozen        # frozen / scratch（ablation対象）
+  feature_dim: 768    # encoder 特徴次元（connector の入力次元。ViT-B/14=768）
+  layers: []          # ④の階層注入用に取り出す中間層（②は空＝最終層のみ）
+  n_visual_tokens: 0  # 学習時に視覚特徴をプールする目標トークン数（平方数。0=保存トークンのまま）
+connector:
+  type: mlp           # projector 型: mlp / identity（=naive 劣化）
+  inject_iters: 0     # 注入場所 SoT: ②=0(prefix連結) / ④=>0(ループ初期へ階層注入)（Notion: visual_inject_iters）
+  inject_mode: prefix_refresh  # ④注入形: prefix_refresh(B,主系=prefix+ループ内リフレッシュ) / broadcast(A,ablation)
