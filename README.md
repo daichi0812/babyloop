@@ -5,6 +5,10 @@ whether **looped (recurrent-depth) transformers** mitigate the text-benchmark
 degradation induced by **multimodal pretraining** under a fixed 100M-word
 budget.
 
+**Paper:** *Loop Before You Leap: What Recurrent Depth Can and Cannot Buy in
+Data-Limited Pretraining* — under review at the BabyLM 2026 workshop
+(arXiv preprint in preparation).
+
 > Hypothesis: multimodal pretraining degrades text-only abilities (e.g.
 > BLiMP) under a tight word budget. Looped computation adds effective depth —
 > latent iterative processing — without extra data or parameters, and may
