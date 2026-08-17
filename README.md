@@ -1,6 +1,6 @@
 # babyloop
 
-Code for a BabyLM Challenge 2026 (Strict track) submission: a 2×2 study of
+Code for a BabyLM Challenge 2026 (Strict track) submission: a controlled study of
 whether **looped (recurrent-depth) transformers** mitigate the text-benchmark
 degradation induced by **multimodal pretraining** under a fixed 100M-word
 budget.
@@ -14,10 +14,13 @@ Data-Limited Pretraining* — under review at the BabyLM 2026 workshop
 > latent iterative processing — without extra data or parameters, and may
 > mitigate that degradation.
 
-## 2×2 design
+## Experimental conditions
 
-One factor is architecture (standard vs. looped), the other is modality
-(text-only vs. multimodal). Each cell is one file in `configs/experiment/`:
+The conditions cross architecture (standard vs. looped) with modality
+(text-only vs. multimodal); each condition is one file in `configs/experiment/`.
+The paper analyzes these as three planned comparisons (compute allocation,
+cross-modal integration, and attribution of the multimodal penalty) rather
+than as a full factorial design:
 
 |                      | text-only    | multimodal  |
 | -------------------- | ------------ | ----------- |
@@ -92,7 +95,7 @@ budget). Checkpoints are saved in HF-compatible form at the 28 official
 milestones. bf16 on a single A100 is assumed.
 
 ```bash
-uv run python scripts/train.py experiment=loop_mm             # one 2×2 cell
+uv run python scripts/train.py experiment=loop_mm             # one condition
 uv run python scripts/train.py experiment=std_text train.seed=43
 ```
 
@@ -119,7 +122,7 @@ word-budget rule compliance, and words-seen LR-schedule correctness.
 
 ```
 babyloop/
-├── configs/              # Hydra configs (experiment/ = one file per 2×2 cell)
+├── configs/              # Hydra configs (experiment/ = one file per condition)
 ├── src/babyloop/
 │   ├── models/           # LoopedTransformer, vision encoder, fusion strategies
 │   ├── data/             # preprocessing, word-budget accounting, dataloaders
